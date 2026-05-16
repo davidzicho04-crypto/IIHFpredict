@@ -1,0 +1,44 @@
+name: Automaticka Aktualizace Tipovacky
+
+on:
+  schedule:
+    - cron: '30 4 * * *'  # Spustí se každý den v 4:30 UTC (cca 6:30 ráno našeho času)
+  workflow_dispatch:     # Tlačítko na ruční spuštění kdykoliv
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stazeni kodu z GitHubu
+        uses: actions/checkout@v4
+
+      - name: Nastaveni Pythonu
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalace knihoven
+        run: |
+          python -m pip install --upgrade pip
+          pip install curl_cffi shin
+
+      - name: Vypocet presnych vysledku pomoci Shina
+        env:
+          TIPSPORT_COOKIE: ${{ secrets.TIPSPORT_COOKIE }}
+        run: python tipsport.py
+
+      - name: Nastaveni pro GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Nahrani vygenerovaneho index.html
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Publikovani webu online
+        uses: actions/deploy-pages@v4
